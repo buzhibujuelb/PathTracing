@@ -5,11 +5,12 @@ project(PathTracing LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(OptiX_INCLUDE "C:/ProgramData/NVIDIA Corporation/OptiX SDK 8.1.0/include")
-set(CUDA_INCLUDE "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/include")
-set(Optix_LIBRARY "C:/ProgramData/NVIDIA Corporation/OptiX SDK 8.1.0/SDK/lib")
-set(CUDA_LIBRARIES "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/lib/x64")
-set(CUDA_CUDA_LIBRARY "C:/ProgramData/NVIDIA Corporation/OptiX SDK 8.1.0/SDK/cuda")
+set(Optix_Root "C:/ProgramData/NVIDIA Corporation/OptiX SDK 8.1.0/")
+set(Cuda_Root "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6")
+set(OptiX_INCLUDE "${Optix_Root}/include")
+set(CUDA_INCLUDE "${Cuda_Root}/include")
+set(Optix_LIBRARY "${Optix_Root}/SDK/build/bin/Debug")
+set(CUDA_LIBRARIES "${Cuda_Root}/lib/x64")
 
 include_directories(
         ${OptiX_INCLUDE}
@@ -21,7 +22,6 @@ add_executable(PathTracing
   main.cpp
 )
 
-
 find_package(CUDAToolkit REQUIRED)
 
 # 添加 CUDA 编译器配置
@@ -32,9 +32,8 @@ set_target_properties(PathTracing PROPERTIES
 
 target_link_directories(PathTracing PRIVATE
   gdt
- ${Optix_LIBRARY}
+  ${Optix_LIBRARY}
   ${CUDA_LIBRARIES}
-  ${CUDA_CUDA_LIBRARY}
 )
 
 # 链接库
