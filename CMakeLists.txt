@@ -6,10 +6,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(Optix_Root "C:/ProgramData/NVIDIA Corporation/OptiX SDK 8.1.0/")
-set(Cuda_Root "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6")
 set(OptiX_INCLUDE "${Optix_Root}/include")
+#set(Optix_LIBRARY "${Optix_Root}/SDK/build/bin/Debug")
+
+set(Cuda_Root "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6")
 set(CUDA_INCLUDE "${Cuda_Root}/include")
-set(Optix_LIBRARY "${Optix_Root}/SDK/build/bin/Debug")
 set(CUDA_LIBRARIES "${Cuda_Root}/lib/x64")
 
 include_directories(
@@ -31,24 +32,22 @@ set_target_properties(PathTracing PROPERTIES
 )
 
 target_link_directories(PathTracing PRIVATE
-  gdt
-  ${Optix_LIBRARY}
   ${CUDA_LIBRARIES}
 )
 
 # 链接库
 target_link_libraries(PathTracing PRIVATE
-        opengl32
+        #opengl32
         cuda
-        cudadevrt
+        #cudadevrt
         cudart
-        cudart_static
-        cufft
-        cufftw
-        curand
-        cusolver
-        cusparse
-        nvblas
+        #cudart_static
+        #cufft
+        #cufftw
+        #curand
+        #cusolver
+        #cusparse
+        #nvblas
 )
 
 # NVCC 编译选项
