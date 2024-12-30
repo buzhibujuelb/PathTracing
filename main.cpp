@@ -1,6 +1,6 @@
-// common gdt helper tools
-#include "gdt/gdt.h"
-#include "optix7.h"
+#include "SampleRenderer.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "3rdParty/stb_image_write.h"
 
 /*! \namespace osc - Optix Siggraph Course */
 namespace osc {
@@ -30,25 +30,28 @@ namespace osc {
     extern "C" int main(int ac, char** av)
     {
         try {
-            std::cout << "#osc: initializing optix..." << std::endl;
+            SampleRenderer  sample;
 
-            initOptix();
+            const vec2i fbSize(vec2i(1200, 1024));
+            sample.resize(fbSize);
+            sample.render();
+
+            std::vector<uint32_t> pixels(fbSize.x * fbSize.y );
+            sample.downloadPixels(pixels.data());
+
+            const std::string fileName = "osc.png";
+            stbi_write_png(fileName.c_str(), fbSize.x, fbSize.y, 4, pixels.data(), fbSize.x*sizeof(uint32_t));
 
             std::cout << GDT_TERMINAL_GREEN
-                << "#osc: successfully initialized optix... yay!"
-                << GDT_TERMINAL_DEFAULT << std::endl;
-
-            // for this simple hello-world example, don't do anything else
-            // ...
-            std::cout << "#osc: done. clean exit." << std::endl;
-
-        }
-        catch (std::runtime_error& e) {
+                      << std::endl
+                      << "Image rendered, and saved to " << fileName << " ... done." << std::endl
+                      << GDT_TERMINAL_DEFAULT
+                      << std::endl;
+        } catch (std::runtime_error& e) {
             std::cout << GDT_TERMINAL_RED << "FATAL ERROR: " << e.what()
-                << GDT_TERMINAL_DEFAULT << std::endl;
-            exit(1);
+                    << GDT_TERMINAL_DEFAULT << std::endl;
+          exit(1);
         }
         return 0;
     }
-
 }
