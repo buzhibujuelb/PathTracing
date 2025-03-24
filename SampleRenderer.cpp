@@ -33,7 +33,7 @@ namespace osc {
     int objectID;
   };
 
-  SampleRenderer::SampleRenderer() {
+  SampleRenderer::SampleRenderer(const TriangleMesh& model) {
     initOptix();
 
     std::cout << "#osc: creating optix context ..." << std::endl;
@@ -50,6 +50,8 @@ namespace osc {
 
     std::cout << "#osc: creating hitgroup programs ..." << std::endl;
     createHitgroupPrograms();
+
+    launchParams.traversable = buildAccel(model);
 
     std::cout << "#osc: setting up optix pipeline ..." << std::endl;
     createPipeline();
@@ -301,9 +303,8 @@ void SampleRenderer::createModule() {
   void SampleRenderer::render() {
     // sanity check: make sure we launch only after first resize is
     // already done:
-    if (launchParams.fbSize.x == 0) return;
+    if (launchParams.frame.size.x == 0) return;
     launchParamsBuffer.upload(&launchParams,1);
-    launchParams.frameID++;
 
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
                             pipeline,cuStream,
@@ -312,8 +313,8 @@ void SampleRenderer::createModule() {
                             launchParamsBuffer.sizeInBytes,
                             &sbt,
                             /*! dimensions of the launch: */
-                            launchParams.fbSize.x,
-                            launchParams.fbSize.y,
+                            launchParams.frame.size.x,
+                            launchParams.frame.size.y,
                             1
                             ));
     // sync - make sure the frame is rendered before we download and
@@ -321,6 +322,136 @@ void SampleRenderer::createModule() {
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+  }
+
+  void SampleRenderer::setCamera(const Camera &camera) {
+    lastSetCamera = camera;
+    launchParams.camera.position = camera.from;
+    launchParams.camera.direction = normalize(camera.at - camera.from);
+    const float cosFovy = 0.66f;
+    const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
+    launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.up));
+    launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal, launchParams.camera.direction));
+  }
+
+  OptixTraversableHandle SampleRenderer::buildAccel(const TriangleMesh &model) {
+ // upload the model to the device: the builder
+    vertexBuffer.alloc_and_upload(model.vertex);
+    indexBuffer.alloc_and_upload(model.index);
+
+    OptixTraversableHandle asHandle { 0 };
+
+    // ==================================================================
+    // triangle inputs
+    // ==================================================================
+    OptixBuildInput triangleInput = {};
+    triangleInput.type
+      = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+    // create local variables, because we need a *pointer* to the
+    // device pointers
+    CUdeviceptr d_vertices = vertexBuffer.d_pointer();
+    CUdeviceptr d_indices  = indexBuffer.d_pointer();
+
+    triangleInput.triangleArray.vertexFormat        = OPTIX_VERTEX_FORMAT_FLOAT3;
+    triangleInput.triangleArray.vertexStrideInBytes = sizeof(vec3f);
+    triangleInput.triangleArray.numVertices         = (int)model.vertex.size();
+    triangleInput.triangleArray.vertexBuffers       = &d_vertices;
+
+    triangleInput.triangleArray.indexFormat         = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+    triangleInput.triangleArray.indexStrideInBytes  = sizeof(vec3i);
+    triangleInput.triangleArray.numIndexTriplets    = (int)model.index.size();
+    triangleInput.triangleArray.indexBuffer         = d_indices;
+
+    uint32_t triangleInputFlags[1] = { 0 };
+
+    // in this example we have one SBT entry, and no per-primitive
+    // materials:
+    triangleInput.triangleArray.flags               = triangleInputFlags;
+    triangleInput.triangleArray.numSbtRecords               = 1;
+    triangleInput.triangleArray.sbtIndexOffsetBuffer        = 0;
+    triangleInput.triangleArray.sbtIndexOffsetSizeInBytes   = 0;
+    triangleInput.triangleArray.sbtIndexOffsetStrideInBytes = 0;
+
+    // ==================================================================
+    // BLAS setup
+    // ==================================================================
+
+    OptixAccelBuildOptions accelOptions = {};
+    accelOptions.buildFlags             = OPTIX_BUILD_FLAG_NONE
+      | OPTIX_BUILD_FLAG_ALLOW_COMPACTION
+      ;
+    accelOptions.motionOptions.numKeys  = 1;
+    accelOptions.operation              = OPTIX_BUILD_OPERATION_BUILD;
+
+    OptixAccelBufferSizes blasBufferSizes;
+    OPTIX_CHECK(optixAccelComputeMemoryUsage
+                (optixContext,
+                 &accelOptions,
+                 &triangleInput,
+                 1,  // num_build_inputs
+                 &blasBufferSizes
+                 ));
+
+    // ==================================================================
+    // prepare compaction
+    // ==================================================================
+
+    CUDABuffer compactedSizeBuffer;
+    compactedSizeBuffer.alloc(sizeof(uint64_t));
+
+    OptixAccelEmitDesc emitDesc;
+    emitDesc.type   = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
+    emitDesc.result = compactedSizeBuffer.d_pointer();
+
+    // ==================================================================
+    // execute build (main stage)
+    // ==================================================================
+
+    CUDABuffer tempBuffer;
+    tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
+
+    CUDABuffer outputBuffer;
+    outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
+
+    OPTIX_CHECK(optixAccelBuild(optixContext,
+                                /* stream */0,
+                                &accelOptions,
+                                &triangleInput,
+                                1,
+                                tempBuffer.d_pointer(),
+                                tempBuffer.sizeInBytes,
+
+                                outputBuffer.d_pointer(),
+                                outputBuffer.sizeInBytes,
+
+                                &asHandle,
+
+                                &emitDesc,1
+                                ));
+    CUDA_SYNC_CHECK();
+
+    // ==================================================================
+    // perform compaction
+    // ==================================================================
+    uint64_t compactedSize;
+    compactedSizeBuffer.download(&compactedSize,1);
+
+    asBuffer.alloc(compactedSize);
+    OPTIX_CHECK(optixAccelCompact(optixContext,
+                                  /*stream:*/0,
+                                  asHandle,
+                                  asBuffer.d_pointer(),
+                                  asBuffer.sizeInBytes,
+                                  &asHandle));
+    CUDA_SYNC_CHECK();
+
+    // ==================================================================
+    // aaaaaand .... clean up
+    // ==================================================================
+    outputBuffer.free(); // << the UNcompacted, temporary output buffer
+    tempBuffer.free();
+    compactedSizeBuffer.free();
+    return asHandle;
   }
 
   /*! resize frame buffer to given resolution */
@@ -333,16 +464,50 @@ void SampleRenderer::createModule() {
     colorBuffer.resize(newSize.x*newSize.y*sizeof(uint32_t));
     // update the launch parameters that we'll pass to the optix
     // launch:
-    launchParams.fbSize      = newSize;
-    launchParams.colorBuffer = (uint32_t*)colorBuffer.d_ptr;
+    launchParams.frame.size      = newSize;
+    launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_ptr;
+
+    setCamera(lastSetCamera);
   }
 
   /*! download the rendered color buffer */
   void SampleRenderer::downloadPixels(uint32_t h_pixels[])
   {
-    colorBuffer.download(h_pixels,
-                         launchParams.fbSize.x*launchParams.fbSize.y);
+    colorBuffer.download(h_pixels, launchParams.frame.size.x*launchParams.frame.size.y);
   }
 
-
+ void TriangleMesh::addCube(const vec3f& center, const vec3f& size)
+  {
+      affine3f xfm;
+      xfm.p = center - 0.5f * size;
+      xfm.l.vx = vec3f(size.x, 0.f, 0.f);
+      xfm.l.vy = vec3f(0.f, size.y, 0.f);
+      xfm.l.vz = vec3f(0.f, 0.f, size.z);
+      addUnitCube(xfm);
+  }
+  /*! add a unit cube (subject to given xfm matrix) to the current
+      triangleMesh */
+  void TriangleMesh::addUnitCube(const affine3f& xfm)
+  {
+      int firstVertexID = (int)vertex.size();
+      vertex.push_back(xfmPoint(xfm, vec3f(0.f, 0.f, 0.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(1.f, 0.f, 0.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(0.f, 1.f, 0.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(1.f, 1.f, 0.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(0.f, 0.f, 1.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(1.f, 0.f, 1.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(0.f, 1.f, 1.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(1.f, 1.f, 1.f)));
+      int indices[] = { 0,1,3, 2,3,0,
+                       5,7,6, 5,6,4,
+                       0,4,5, 0,5,1,
+                       2,3,7, 2,7,6,
+                       1,5,7, 1,7,3,
+                       4,0,2, 4,2,6
+      };
+      for (int i = 0; i < 12; i++)
+          index.push_back(firstVertexID + vec3i(indices[3 * i + 0],
+              indices[3 * i + 1],
+              indices[3 * i + 2]));
+  }
 }

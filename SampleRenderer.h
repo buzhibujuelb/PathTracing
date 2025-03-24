@@ -4,17 +4,40 @@
 
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
+#include "gdt/math/AffineSpace.h"
 
 namespace osc {
+
+    struct Camera {
+        vec3f from;
+        vec3f at;
+        vec3f up;
+    };
+
+    struct TriangleMesh {
+        /*! add a unit cube (subject to given xfm matrix) to the current
+            triangleMesh */
+        void addUnitCube(const affine3f &xfm);
+
+        //! add aligned cube aith front-lower-left corner and size
+        void addCube(const vec3f &center, const vec3f &size);
+
+        std::vector<vec3f> vertex;
+        std::vector<vec3i> index;
+      };
+
     class SampleRenderer {
     public:
-        SampleRenderer();
+        SampleRenderer(const TriangleMesh &model);
 
         void render();
 
         void resize(const vec2i& size);
 
         void downloadPixels(uint32_t h_pixels[]);
+
+        void setCamera(const Camera& camera);
+
     protected:
         void initOptix();
 
@@ -31,6 +54,8 @@ namespace osc {
         void createPipeline();
 
         void buildSBT();
+
+        OptixTraversableHandle buildAccel(const TriangleMesh &model);
 
     protected:
         CUcontext       cuContext;
@@ -59,5 +84,14 @@ namespace osc {
         CUDABuffer launchParamsBuffer;
 
         CUDABuffer colorBuffer;
+
+        Camera lastSetCamera;
+
+        const TriangleMesh model;
+        CUDABuffer vertexBuffer;
+        CUDABuffer indexBuffer;
+        //! buffer that keeps the (final, compacted) accel structure
+        CUDABuffer asBuffer;
     };
+
 }
