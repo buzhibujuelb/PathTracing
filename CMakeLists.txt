@@ -48,6 +48,7 @@ endmacro()
 include_directories(
         ${OptiX_INCLUDE}
         ${CUDA_INCLUDE}
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 cuda_compile_and_embed(embedded_ptx_code devicePrograms.cu)
@@ -60,6 +61,7 @@ add_executable(PathTracing
     SampleRenderer.h
     SampleRenderer.cpp
     main.cpp
+    glfWindow/GLFWindow.cpp
 )
 
 # 添加 CUDA 编译器配置
@@ -72,9 +74,12 @@ target_link_directories(PathTracing PRIVATE
   ${CUDA_LIBRARIES}
 )
 
+add_subdirectory(3rdParty/glfw)
+
 # 链接库
 target_link_libraries(PathTracing PRIVATE
-        #opengl32
+        opengl32
+        glfw
         cuda
         #cudadevrt
         cudart
