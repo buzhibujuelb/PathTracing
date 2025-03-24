@@ -28,7 +28,7 @@ namespace osc {
 
     class SampleRenderer {
     public:
-        SampleRenderer(const TriangleMesh &model);
+        SampleRenderer(const std::vector<TriangleMesh> &meshes);
 
         void render();
 
@@ -55,7 +55,7 @@ namespace osc {
 
         void buildSBT();
 
-        OptixTraversableHandle buildAccel(const TriangleMesh &model);
+        OptixTraversableHandle buildAccel();
 
     protected:
         CUcontext       cuContext;
@@ -87,9 +87,9 @@ namespace osc {
 
         Camera lastSetCamera;
 
-        const TriangleMesh model;
-        CUDABuffer vertexBuffer;
-        CUDABuffer indexBuffer;
+        std::vector<TriangleMesh> meshes;
+        std::vector<CUDABuffer> vertexBuffer;
+        std::vector<CUDABuffer> indexBuffer;
         //! buffer that keeps the (final, compacted) accel structure
         CUDABuffer asBuffer;
     };

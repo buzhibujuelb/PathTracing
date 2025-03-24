@@ -29,7 +29,7 @@ namespace osc {
 
     struct SampleWindow : public GLFCameraWindow
     {
-        SampleWindow(const std::string& title, const TriangleMesh &model, const Camera &camera, const float worldScale)
+        SampleWindow(const std::string& title, const std::vector<TriangleMesh> &model, const Camera &camera, const float worldScale)
             : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale), sample(model)
         {}
 
@@ -99,11 +99,11 @@ namespace osc {
     {
         try {
 
-              TriangleMesh model;
+              std::vector<TriangleMesh> model(2);
             // 100x100 thin ground plane
-            model.addCube(vec3f(0.f, -1.5f, 0.f), vec3f(10.f, .1f, 10.f));
+            model[0].addCube(vec3f(0.f, -1.5f, 0.f), vec3f(10.f, .1f, 10.f));
             // a unit cube centered on top of that
-            model.addCube(vec3f(0.f, 0.f, 0.f), vec3f(2.f, 2.f, 2.f));
+            model[1].addCube(vec3f(0.f, 0.f, 0.f), vec3f(2.f, 2.f, 2.f));
             Camera camera = { /*from*/vec3f(-10.f,2.f,-12.f),
                 /* at */vec3f(0.f,0.f,0.f),
                 /* up */vec3f(0.f,1.f,0.f) };

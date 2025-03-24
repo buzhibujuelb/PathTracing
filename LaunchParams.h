@@ -21,4 +21,11 @@ namespace osc {
         } camera;
         OptixTraversableHandle traversable;
       };
+
+  struct TriangleMeshSBTData {
+      vec3f  color;
+      vec3f *vertex;
+      vec3i *index;
+    };
+
 }
