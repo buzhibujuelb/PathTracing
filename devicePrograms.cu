@@ -1,4 +1,5 @@
 #include <optix_device.h>
+#include <cuda_runtime.h>
 #include "LaunchParams.h"
 
 using namespace osc;
@@ -33,15 +34,31 @@ namespace osc {
         const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
         const int primID = optixGetPrimitiveIndex();
         const vec3i index = sbtData.index[primID];
+        const float u = optixGetTriangleBarycentrics().x;
+        const float v = optixGetTriangleBarycentrics().y;
         const vec3f &A = sbtData.vertex[index.x];
         const vec3f &B = sbtData.vertex[index.y];
         const vec3f &C = sbtData.vertex[index.z];
-        const vec3f Ng = normalize(cross(B-A, C-A));
+
+        vec3f N;
+        if (sbtData.normal) {
+            N = normalize((1-u-v)*sbtData.normal[index.x] + u*sbtData.normal[index.y] + v*sbtData.normal[index.z]);
+        } else {
+            N = normalize(cross(B-A, C-A));
+        }
+
+        vec3f diffuseColor = sbtData.color;
+
+        if (sbtData.hasTexture && sbtData.texcoord) {
+            const vec2f tc = (1-u-v)*sbtData.texcoord[index.x] + u*sbtData.texcoord[index.y] + v*sbtData.texcoord[index.z];
+            vec4f fromTexture = tex2D<float4>(sbtData.texture, tc.x, tc.y);
+            diffuseColor*= (vec3f)fromTexture;
+        }
 
         const vec3f rayDir = optixGetWorldRayDirection();
-        const float cosDN = 0.2f + .8f* fabsf(dot(rayDir, Ng));
+        const float cosDN = 0.2f + .8f* fabsf(dot(rayDir, N));
         vec3f &prd = *(vec3f *)getPRD<vec3f>();
-        prd = cosDN * sbtData.color;
+        prd = cosDN * diffuseColor;
     }
 
     extern "C" __global__ void __anyhit__radiance() {
@@ -63,7 +80,7 @@ namespace osc {
         uint32_t u0, u1;
         packPointer(&pixelColorPRD, u0, u1);
 
-        const vec2f screen(vec2f(ix*0.5f, iy*0.5f)/vec2f(optixLaunchParams.frame.size));
+        const vec2f screen(vec2f(ix+0.5f, iy+0.5f)/vec2f(optixLaunchParams.frame.size));
 
         vec3f rayDir = normalize(camera.direction+(screen.x-0.5f)*camera.horizontal+(screen.y-0.5f)*camera.vertical);
 

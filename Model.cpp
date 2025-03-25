@@ -5,6 +5,8 @@
 #include "Model.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "3rdParty/tiny_obj_loader.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "3rdParty/stb_image.h"
 //std
 #include <set>
 
@@ -25,7 +27,8 @@ namespace std {
 }
 
 namespace osc {
-    int addVertex(TriangleMesh *mesh, tinyobj::attrib_t &attributes, const tinyobj::index_t &idx, std::map<tinyobj::index_t, int> &knownVertices) {
+    int addVertex(TriangleMesh *mesh, tinyobj::attrib_t &attributes, const tinyobj::index_t &idx,
+                  std::map<tinyobj::index_t, int> &knownVertices) {
         if (knownVertices.find(idx) != knownVertices.end())
             return knownVertices[idx];
         const vec3f *vertex_array = (const vec3f *) attributes.vertices.data();
@@ -57,6 +60,7 @@ namespace osc {
         Model *model = new Model;
 
         const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
+        const std::string modelDir = objFile.substr(0, objFile.rfind('/') + 1);
         PRINT(mtlDir);
 
         tinyobj::attrib_t attributes;
@@ -89,6 +93,7 @@ namespace osc {
                 materialIDs.insert(faceMatID);
 
             std::map<tinyobj::index_t, int> knownVertices;
+            std::map<std::string, int> knownTextures;
 
             for (int materialID: materialIDs) {
                 TriangleMesh *mesh = new TriangleMesh;
@@ -104,7 +109,7 @@ namespace osc {
                               addVertex(mesh, attributes, idx2, knownVertices));
                     mesh->index.push_back(idx);
                     mesh->diffuse = (const vec3f &) materials[materialID].diffuse;
-                    mesh->diffuse = gdt::randomColor(materialID);
+                    mesh->diffuseTextureID = loadTexture(model, knownTextures, materials[materialID].diffuse_texname, modelDir);
                 }
 
                 if (mesh->vertex.empty())
@@ -122,5 +127,47 @@ namespace osc {
 
         std::cout << "created a total of " << model->meshes.size() << " meshes" << std::endl;
         return model;
+    }
+
+    int loadTexture(Model *model, std::map<std::string, int> &knownTextures, const std::string &textureFileName, const std::string &modelPath) {
+        if (knownTextures.find(textureFileName) != knownTextures.end())
+            return knownTextures[textureFileName];
+        if (textureFileName == "") return -1;
+
+        std::string fileName = textureFileName;
+        // first, fix backspaces:
+        for (auto &c: fileName)
+            if (c == '\\') c = '/';
+        fileName = modelPath + "/" + fileName;
+        vec2i res;
+        int comp;
+        unsigned char *image = stbi_load(fileName.c_str(),
+                                         &res.x, &res.y, &comp, STBI_rgb_alpha);
+        int textureID = -1;
+        if (image) {
+            textureID = (int) model->textures.size();
+            Texture *texture = new Texture;
+            texture->resolution = res;
+            texture->pixel = (uint32_t *) image;
+            /* iw - actually, it seems that stbi loads the pictures
+               mirrored along the y axis - mirror them here */
+            for (int y = 0; y < res.y / 2; y++) {
+                uint32_t *line_y = texture->pixel + y * res.x;
+                uint32_t *mirrored_y = texture->pixel + (res.y - 1 - y) * res.x;
+                int mirror_y = res.y - 1 - y;
+                for (int x = 0; x < res.x; x++) {
+                    std::swap(line_y[x], mirrored_y[x]);
+                }
+            }
+
+            model->textures.push_back(texture);
+        } else {
+            std::cout << GDT_TERMINAL_RED
+                    << "Could not load texture from " << fileName << "!"
+                    << GDT_TERMINAL_DEFAULT << std::endl;
+        }
+
+        knownTextures[textureFileName] = textureID;
+        return textureID;
     }
 }

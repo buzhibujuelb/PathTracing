@@ -27,6 +27,8 @@ namespace osc {
 
         void setCamera(const Camera& camera);
 
+        void createTextures();
+
     protected:
         void initOptix();
 
@@ -79,8 +81,13 @@ namespace osc {
         const Model *model;
         std::vector<CUDABuffer> vertexBuffer;
         std::vector<CUDABuffer> indexBuffer;
+        std::vector<CUDABuffer> normalBuffer;
+        std::vector<CUDABuffer> texcoordBuffer;
         //! buffer that keeps the (final, compacted) accel structure
         CUDABuffer asBuffer;
+
+        std::vector<cudaArray_t> textureArrays;
+        std::vector<cudaTextureObject_t> textureObjects;
     };
 
 }

@@ -30,8 +30,9 @@ namespace osc {
     struct SampleWindow : public GLFCameraWindow
     {
         SampleWindow(const std::string& title, const Model* model, const Camera &camera, const float worldScale)
-            : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale), sample(model)
-        {}
+            : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale), sample(model) {
+                sample.setCamera(camera);
+        }
 
         virtual void render() override
         {
