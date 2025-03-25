@@ -62,6 +62,8 @@ add_executable(PathTracing
     SampleRenderer.cpp
     main.cpp
     glfWindow/GLFWindow.cpp
+        Model.h
+        Model.cpp
 )
 
 # 添加 CUDA 编译器配置
