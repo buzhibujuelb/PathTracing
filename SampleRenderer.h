@@ -74,6 +74,7 @@ namespace osc {
         CUDABuffer launchParamsBuffer;
 
         CUDABuffer colorBuffer;
+        CUDABuffer renderBuffer;
 
         Camera lastSetCamera;
 

@@ -3,8 +3,8 @@
 //
 
 #include <texture_types.h>
-#include <gdt/math/AffineSpace.h>
 
+//#define BMW
 #include "gdt/math/vec.h"
 
 namespace osc {
@@ -15,6 +15,7 @@ namespace osc {
             int frameID;
             float4 *colorBuffer;
             vec2i size;
+            float4 *renderBuffer;
         } frame;
 
         struct {
@@ -27,6 +28,9 @@ namespace osc {
         OptixTraversableHandle traversable;
         int numPixelSamples = 10;
         int maxBounce = 10;
+        float lightness_change = 0.25f;
+        float contrast_change = 0.2f;
+        float saturate_change = -0.2f;
     };
 
     struct TriangleMeshSBTData {

@@ -304,7 +304,11 @@ namespace osc {
             } else {
                 rec.data.hasTexture = false;
             }
-            rec.data.color = meshID < numObjects - 1 ? mesh->diffuse : vec3f(0.5, 1, 0.5); //randomColor(meshID);
+#ifdef BMW
+            rec.data.color = meshID < numObjects - 1 ? mesh->diffuse : vec3f(0.5, 1, 0.5);
+#else
+            rec.data.color = mesh->diffuse ;
+#endif
             rec.data.vertex = (vec3f *) vertexBuffer[meshID].d_pointer();
             rec.data.index = (vec3i *) indexBuffer[meshID].d_pointer();
             rec.data.normal = (vec3f *) normalBuffer[meshID].d_pointer();
@@ -549,17 +553,19 @@ namespace osc {
 
         // resize our cuda frame buffer
         colorBuffer.resize(newSize.x * newSize.y * sizeof(float4));
+        renderBuffer.resize(newSize.x * newSize.y * sizeof(float4));
         // update the launch parameters that we'll pass to the optix
         // launch:
         launchParams.frame.size = newSize;
         launchParams.frame.colorBuffer = (float4 *) colorBuffer.d_ptr;
+        launchParams.frame.renderBuffer = (float4 *) renderBuffer.d_ptr;
 
         setCamera(lastSetCamera);
     }
 
     /*! download the rendered color buffer */
     void SampleRenderer::downloadPixels(float4 h_pixels[]) {
-        colorBuffer.download(h_pixels, launchParams.frame.size.x * launchParams.frame.size.y);
+        renderBuffer.download(h_pixels, launchParams.frame.size.x * launchParams.frame.size.y);
     }
 
 

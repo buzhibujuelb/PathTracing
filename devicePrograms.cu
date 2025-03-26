@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include "gdt/random/random.h"
 #include "Interaction.h"
+#include "PostProcess.h"
 
 using namespace osc;
 
@@ -169,5 +170,21 @@ namespace osc {
             rgba /= optixLaunchParams.frame.frameID + 1.f;
         }
         optixLaunchParams.frame.colorBuffer[fbIndex] = make_float4(rgba.x, rgba.y, rgba.z, rgba.w);
+
+        HSV hsv;
+        BGR bgr;
+        bgr.r = rgba.x;
+        bgr.g = rgba.y;
+        bgr.b = rgba.z;
+        BGR2HSV(bgr, hsv);
+        hsv.v += optixLaunchParams.lightness_change;
+        if (hsv.s >= 0.05f)
+            hsv.s += optixLaunchParams.saturate_change;
+        HSV2BGR(hsv, bgr);
+        Contrast(bgr, optixLaunchParams.contrast_change, 0.5f);
+        rgba.x = bgr.r;
+        rgba.y = bgr.g;
+        rgba.z = bgr.b;
+        optixLaunchParams.frame.renderBuffer[fbIndex] = make_float4(rgba.x, rgba.y, rgba.z, rgba.w);
     }
 }

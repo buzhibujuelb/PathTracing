@@ -95,20 +95,22 @@ namespace osc {
       world, then exit */
     extern "C" int main(int ac, char **av) {
         try {
+#ifdef BMW
             Model *model = loadOBJ("../models/bmw/bmw.obj");
-            //Camera camera = { /*from*/vec3f(-1293.07f, 154.681f, -0.7304f), /* at */model->bounds.center() - vec3f(0,400,0), /* up */vec3f(0.f,1.f,0.f) };
-            Camera camera = {
-                /*from*/vec3f(-800, 400, -800), /* at */vec3f(0, 0, 0), /* up */vec3f(0.f, 1.f, 0.f)
-            };
+            Camera camera = { /*from*/vec3f(-800, 400, -800), /* at */vec3f(0, 0, 0), /* up */vec3f(0.f, 1.f, 0.f) };
 
-            // 100x100 thin ground plane
             model->meshes.push_back(new TriangleMesh);
             (model->meshes.back())->addCube(vec3f(0.f, 320.f, 0.f), vec3f(800.f, 40.f, 800.f));
             (model->meshes.back())->addCube(vec3f(0.f, -20.f, 0.f), vec3f(800.f, 40.f, 800.f));
             (model->meshes.back())->addCube(vec3f(400.f, 160.f, 000.f), vec3f(10.f, 340.f, 800.f));
             (model->meshes.back())->addCube(vec3f(000.f, 160.f, 400.f), vec3f(800.f, 340.f, 10.f));
+#else
 
-            //Camera camera = { /*from*/vec3f(-10.f,2.f,-12.f), /* at */vec3f(0.f,0.f,0.f), /* up */vec3f(0.f,1.f,0.f) };
+            Model *model = loadOBJ("../models/sponza/sponza.obj");
+            Camera camera = { /*from*/vec3f(-1293.07f, 154.681f, -0.7304f), /* at */model->bounds.center() - vec3f(0,400,0), /* up */vec3f(0.f,1.f,0.f) };
+#endif
+
+
             const float worldScale = length(model->bounds.span());
             SampleWindow *window = new SampleWindow("PathTracing", model, camera, worldScale);
             window->run();
