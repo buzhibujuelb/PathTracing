@@ -301,7 +301,7 @@ void SampleRenderer::createModule() {
       } else {
         rec.data.hasTexture = false;
       }
-      rec.data.color = mesh->diffuse;
+      rec.data.color = meshID<numObjects-1? mesh->diffuse: vec3f(0.5,1,0.5);//randomColor(meshID);
       rec.data.vertex = (vec3f*)vertexBuffer[meshID].d_pointer();
       rec.data.index = (vec3i*)indexBuffer[meshID].d_pointer();
       rec.data.normal = (vec3f*)normalBuffer[meshID].d_pointer();
@@ -319,6 +319,7 @@ void SampleRenderer::createModule() {
     // already done:
     if (launchParams.frame.size.x == 0) return;
     launchParamsBuffer.upload(&launchParams,1);
+    launchParams.frame.frameID++;
 
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
                             pipeline,cuStream,
@@ -342,6 +343,7 @@ void SampleRenderer::createModule() {
     lastSetCamera = camera;
     launchParams.camera.position = camera.from;
     launchParams.camera.direction = normalize(camera.at - camera.from);
+    launchParams.frame.frameID = 0;
     const float cosFovy = 0.66f;
     const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
     launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.up));
@@ -545,19 +547,54 @@ void SampleRenderer::createModule() {
     if (newSize.x == 0 | newSize.y == 0) return;
 
     // resize our cuda frame buffer
-    colorBuffer.resize(newSize.x*newSize.y*sizeof(uint32_t));
+    colorBuffer.resize(newSize.x*newSize.y*sizeof(float4));
     // update the launch parameters that we'll pass to the optix
     // launch:
     launchParams.frame.size      = newSize;
-    launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_ptr;
+    launchParams.frame.colorBuffer = (float4*)colorBuffer.d_ptr;
 
     setCamera(lastSetCamera);
   }
 
   /*! download the rendered color buffer */
-  void SampleRenderer::downloadPixels(uint32_t h_pixels[])
+  void SampleRenderer::downloadPixels(float4 h_pixels[])
   {
     colorBuffer.download(h_pixels, launchParams.frame.size.x*launchParams.frame.size.y);
   }
 
+
+ void TriangleMesh::addCube(const vec3f& center, const vec3f& size)
+  {
+      affine3f xfm;
+      xfm.p = center - 0.5f * size;
+      xfm.l.vx = vec3f(size.x, 0.f, 0.f);
+      xfm.l.vy = vec3f(0.f, size.y, 0.f);
+      xfm.l.vz = vec3f(0.f, 0.f, size.z);
+      addUnitCube(xfm);
+  }
+  /*! add a unit cube (subject to given xfm matrix) to the current
+      triangleMesh */
+  void TriangleMesh::addUnitCube(const affine3f& xfm)
+  {
+      int firstVertexID = (int)vertex.size();
+      vertex.push_back(xfmPoint(xfm, vec3f(0.f, 0.f, 0.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(1.f, 0.f, 0.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(0.f, 1.f, 0.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(1.f, 1.f, 0.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(0.f, 0.f, 1.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(1.f, 0.f, 1.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(0.f, 1.f, 1.f)));
+      vertex.push_back(xfmPoint(xfm, vec3f(1.f, 1.f, 1.f)));
+      int indices[] = { 0,1,3, 2,3,0,
+                       5,7,6, 5,6,4,
+                       0,4,5, 0,5,1,
+                       2,3,7, 2,7,6,
+                       1,5,7, 1,7,3,
+                       4,0,2, 4,2,6
+      };
+      for (int i = 0; i < 12; i++)
+          index.push_back(firstVertexID + vec3i(indices[3 * i + 0],
+              indices[3 * i + 1],
+              indices[3 * i + 2]));
+  }
 }

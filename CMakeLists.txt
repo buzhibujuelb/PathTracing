@@ -64,6 +64,7 @@ add_executable(PathTracing
     glfWindow/GLFWindow.cpp
     Model.h
     Model.cpp
+        Interaction.h
 )
 
 # 添加 CUDA 编译器配置

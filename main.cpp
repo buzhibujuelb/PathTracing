@@ -52,7 +52,7 @@ namespace osc {
                 glGenTextures(1, &fbTexture);
             glBindTexture(GL_TEXTURE_2D, fbTexture);
             GLenum texFormat = GL_RGBA;
-            GLenum texelType = GL_UNSIGNED_BYTE;
+            GLenum texelType = GL_FLOAT;
             glTexImage2D(GL_TEXTURE_2D, 0, texFormat, fbSize.x, fbSize.y, 0, GL_RGBA,
                 texelType, pixels.data());
             glDisable(GL_LIGHTING);
@@ -90,7 +90,7 @@ namespace osc {
         vec2i                 fbSize;
         GLuint                fbTexture{ 0 };
         SampleRenderer        sample;
-        std::vector<uint32_t> pixels;
+        std::vector<float4> pixels;
     };
 
 
@@ -99,10 +99,18 @@ namespace osc {
     extern "C" int main(int ac, char** av)
     {
         try {
-            Model* model = loadOBJ("../models/sponza.obj");
-            Camera camera = { /*from*/vec3f(-1293.07f, 154.681f, -0.7304f),
-                /* at */model->bounds.center() - vec3f(0,400,0),
-                /* up */vec3f(0.f,1.f,0.f) };
+            Model* model = loadOBJ("../models/bmw/bmw.obj");
+            //Camera camera = { /*from*/vec3f(-1293.07f, 154.681f, -0.7304f), /* at */model->bounds.center() - vec3f(0,400,0), /* up */vec3f(0.f,1.f,0.f) };
+            Camera camera = { /*from*/vec3f(-800, 400, -800), /* at */vec3f(0,0,0), /* up */vec3f(0.f,1.f,0.f) };
+
+            // 100x100 thin ground plane
+            model->meshes.push_back(new TriangleMesh);
+            (model->meshes.back())->addCube(vec3f(0.f, 320.f, 0.f), vec3f(800.f, 40.f, 800.f));
+            (model->meshes.back())->addCube(vec3f(0.f, -20.f, 0.f), vec3f(800.f, 40.f, 800.f));
+            (model->meshes.back())->addCube(vec3f(400.f, 160.f, 000.f), vec3f(10.f, 340.f, 800.f));
+            (model->meshes.back())->addCube(vec3f(000.f, 160.f, 400.f), vec3f(800.f, 340.f, 10.f));
+
+            //Camera camera = { /*from*/vec3f(-10.f,2.f,-12.f), /* at */vec3f(0.f,0.f,0.f), /* up */vec3f(0.f,1.f,0.f) };
             const float worldScale = length(model->bounds.span());
             SampleWindow* window = new SampleWindow("Optix 7 Course Example", model, camera, worldScale);
             window->run();

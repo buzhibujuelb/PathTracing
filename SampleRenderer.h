@@ -23,7 +23,7 @@ namespace osc {
 
         void resize(const vec2i& size);
 
-        void downloadPixels(uint32_t h_pixels[]);
+        void downloadPixels(float4 h_pixels[]);
 
         void setCamera(const Camera& camera);
 

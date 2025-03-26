@@ -3,6 +3,7 @@
 //
 
 #include <texture_types.h>
+#include <gdt/math/AffineSpace.h>
 
 #include "gdt/math/vec.h"
 
@@ -11,8 +12,9 @@ namespace osc {
 
     struct LaunchParams {
         struct {
-          uint32_t *colorBuffer;
-          vec2i     size;
+            int frameID;
+            float4 *colorBuffer;
+            vec2i     size;
         } frame;
 
         struct {
@@ -22,7 +24,9 @@ namespace osc {
           vec3f vertical;
         } camera;
         OptixTraversableHandle traversable;
-      };
+        int numPixelSamples = 10;
+        int maxBounce = 10;
+    };
 
   struct TriangleMeshSBTData {
       vec3f  color;

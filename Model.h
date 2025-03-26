@@ -23,6 +23,9 @@ namespace osc {
         // material data:
         vec3f              diffuse;
         int                diffuseTextureID {-1};
+
+        void addCube(const vec3f& center, const vec3f& size);
+        void addUnitCube(const affine3f& xfm);
     };
 
     struct Texture {
