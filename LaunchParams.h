@@ -14,28 +14,28 @@ namespace osc {
         struct {
             int frameID;
             float4 *colorBuffer;
-            vec2i     size;
+            vec2i size;
         } frame;
 
         struct {
-          vec3f position;
-          vec3f direction;
-          vec3f horizontal;
-          vec3f vertical;
+            vec3f position;
+            vec3f direction;
+            vec3f horizontal;
+            vec3f vertical;
         } camera;
+
         OptixTraversableHandle traversable;
         int numPixelSamples = 10;
         int maxBounce = 10;
     };
 
-  struct TriangleMeshSBTData {
-      vec3f  color;
-      vec3f *vertex;
-      vec3f *normal;
-      vec2f *texcoord;
-      vec3i *index;
-      bool  hasTexture;
-      cudaTextureObject_t texture;
+    struct TriangleMeshSBTData {
+        vec3f color;
+        vec3f *vertex;
+        vec3f *normal;
+        vec2f *texcoord;
+        vec3i *index;
+        bool hasTexture;
+        cudaTextureObject_t texture;
     };
-
 }

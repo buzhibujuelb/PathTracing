@@ -109,7 +109,8 @@ namespace osc {
                               addVertex(mesh, attributes, idx2, knownVertices));
                     mesh->index.push_back(idx);
                     mesh->diffuse = (const vec3f &) materials[materialID].diffuse;
-                    mesh->diffuseTextureID = loadTexture(model, knownTextures, materials[materialID].diffuse_texname, modelDir);
+                    mesh->diffuseTextureID = loadTexture(model, knownTextures, materials[materialID].diffuse_texname,
+                                                         modelDir);
                 }
 
                 if (mesh->vertex.empty())
@@ -129,7 +130,8 @@ namespace osc {
         return model;
     }
 
-    int loadTexture(Model *model, std::map<std::string, int> &knownTextures, const std::string &textureFileName, const std::string &modelPath) {
+    int loadTexture(Model *model, std::map<std::string, int> &knownTextures, const std::string &textureFileName,
+                    const std::string &modelPath) {
         if (knownTextures.find(textureFileName) != knownTextures.end())
             return knownTextures[textureFileName];
         if (textureFileName == "") return -1;
@@ -141,8 +143,7 @@ namespace osc {
         fileName = modelPath + "/" + fileName;
         vec2i res;
         int comp;
-        unsigned char *image = stbi_load(fileName.c_str(),
-                                         &res.x, &res.y, &comp, STBI_rgb_alpha);
+        unsigned char *image = stbi_load(fileName.c_str(), &res.x, &res.y, &comp, STBI_rgb_alpha);
         int textureID = -1;
         if (image) {
             textureID = (int) model->textures.size();

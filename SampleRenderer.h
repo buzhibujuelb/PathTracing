@@ -8,7 +8,6 @@
 #include "gdt/math/AffineSpace.h"
 
 namespace osc {
-
     struct Camera {
         vec3f from;
         vec3f at;
@@ -17,15 +16,15 @@ namespace osc {
 
     class SampleRenderer {
     public:
-        SampleRenderer(const Model* model);
+        SampleRenderer(const Model *model);
 
         void render();
 
-        void resize(const vec2i& size);
+        void resize(const vec2i &size);
 
         void downloadPixels(float4 h_pixels[]);
 
-        void setCamera(const Camera& camera);
+        void setCamera(const Camera &camera);
 
         void createTextures();
 
@@ -49,9 +48,9 @@ namespace osc {
         OptixTraversableHandle buildAccel();
 
     protected:
-        CUcontext       cuContext;
-        CUstream        cuStream;
-        cudaDeviceProp   cuDeviceProps;
+        CUcontext cuContext;
+        CUstream cuStream;
+        cudaDeviceProp cuDeviceProps;
 
         OptixDeviceContext optixContext;
 
@@ -69,7 +68,7 @@ namespace osc {
         std::vector<OptixProgramGroup> hitgroupPrograms;
         CUDABuffer hitgroupRecordsBuffer;
 
-        OptixShaderBindingTable sbt= {};
+        OptixShaderBindingTable sbt = {};
 
         LaunchParams launchParams;
         CUDABuffer launchParamsBuffer;
@@ -89,5 +88,4 @@ namespace osc {
         std::vector<cudaArray_t> textureArrays;
         std::vector<cudaTextureObject_t> textureObjects;
     };
-
 }

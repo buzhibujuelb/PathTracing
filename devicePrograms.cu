@@ -53,8 +53,8 @@ namespace osc {
 
         vec3f N;
         if (sbtData.normal) {
-            N =  (1 - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z];
-            if (N==vec3f(0.f)) {
+            N = (1 - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z];
+            if (N == vec3f(0.f)) {
                 N = cross(B - A, C - A);
             }
         } else {
@@ -65,9 +65,9 @@ namespace osc {
 
 
         const vec3f rayDir = optixGetWorldRayDirection();
-        if ( dot(N, rayDir)>0) N = -N;
+        if (dot(N, rayDir) > 0) N = -N;
 
-        prd.position = (1-u-v)*A+u*B+v*C;
+        prd.position = (1 - u - v) * A + u * B + v * C;
         prd.geoNormal = N;
         vec3f diffuseColor = sbtData.color;
 
@@ -80,7 +80,6 @@ namespace osc {
 
         float cosDN = 0.2f + .8f * fabsf(dot(rayDir, N));
         prd.mat_color = cosDN * diffuseColor;
-
     }
 
     extern "C" __global__ void __anyhit__radiance() {
@@ -117,7 +116,7 @@ namespace osc {
             vec3f radiance = 0.0f;
             vec3f accum = 1.0f;
 
-            Interaction isect;  // 不能放外面
+            Interaction isect; // 不能放外面
             for (int bounce = 0;; bounce++) {
                 if (bounce >= optixLaunchParams.maxBounce) {
                     //radiance = 0;
@@ -142,12 +141,12 @@ namespace osc {
                     break;
                 }
                 radiance += 0;
-                accum*=isect.mat_color;
+                accum *= isect.mat_color;
                 vec3f wi;
                 vec3f rnd;
-                rnd.x = prd.random()*2-1;
-                rnd.y = prd.random()*2-1;
-                rnd.z = prd.random()*2-1;
+                rnd.x = prd.random() * 2 - 1;
+                rnd.y = prd.random() * 2 - 1;
+                rnd.z = prd.random() * 2 - 1;
                 wi = normalize(isect.geoNormal + normalize(rnd));
                 ray = isect.spawnRay(wi);
                 //printf("sample %d: radiance = %.2f %.2f %.2f\n", sampleID, radiance.x, radiance.y, radiance.z);
@@ -165,11 +164,10 @@ namespace osc {
 
         // and write to frame buffer ...
         const uint32_t fbIndex = ix + iy * optixLaunchParams.frame.size.x;
-        if (optixLaunchParams.frame.frameID>0) {
+        if (optixLaunchParams.frame.frameID > 0) {
             rgba += vec4f(optixLaunchParams.frame.colorBuffer[fbIndex]) * float(optixLaunchParams.frame.frameID);
-            rgba /= optixLaunchParams.frame.frameID+1.f;
+            rgba /= optixLaunchParams.frame.frameID + 1.f;
         }
         optixLaunchParams.frame.colorBuffer[fbIndex] = make_float4(rgba.x, rgba.y, rgba.z, rgba.w);
     }
-
 }

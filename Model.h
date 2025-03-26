@@ -21,34 +21,34 @@ namespace osc {
         std::vector<vec3i> index;
 
         // material data:
-        vec3f              diffuse;
-        int                diffuseTextureID {-1};
+        vec3f diffuse;
+        int diffuseTextureID{-1};
 
-        void addCube(const vec3f& center, const vec3f& size);
-        void addUnitCube(const affine3f& xfm);
+        void addCube(const vec3f &center, const vec3f &size);
+
+        void addUnitCube(const affine3f &xfm);
     };
 
     struct Texture {
-        ~ Texture() { if (pixel) delete pixel;}
-        uint32_t* pixel {nullptr};
+        ~ Texture() { if (pixel) delete pixel; }
+        uint32_t *pixel{nullptr};
         vec2i resolution = {-1};
     };
 
     struct Model {
-        ~Model()
-        {
-            for (auto mesh : meshes) delete mesh;
+        ~Model() {
+            for (auto mesh: meshes) delete mesh;
             for (auto texture: textures) delete texture;
         }
 
-        std::vector<TriangleMesh*> meshes;
-        std::vector<Texture*> textures;
+        std::vector<TriangleMesh *> meshes;
+        std::vector<Texture *> textures;
         //! bounding box of all vertices in the model
         box3f bounds;
     };
 
-    Model* loadOBJ(const std::string& objFile);
+    Model *loadOBJ(const std::string &objFile);
 
-    int loadTexture(Model* model, std::map<std::string, int>&knownTextures,const std::string& textureFileName, const std::string &modelPath);
-
+    int loadTexture(Model *model, std::map<std::string, int> &knownTextures, const std::string &textureFileName,
+                    const std::string &modelPath);
 }

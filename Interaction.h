@@ -26,7 +26,7 @@ struct Interaction {
         if (dot(wi, N) < 0) N = -N;
 
         Ray ray;
-        ray.origin = position+N*bias;
+        ray.origin = position + N * bias;
         ray.direction = wi;
         ray.tmax = FLT_MAX;
         return ray;
