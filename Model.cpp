@@ -120,6 +120,7 @@ namespace osc {
             }
         }
 
+        loadEnvmap(model, "../models/goegap_road_4k.hdr");
         // of course, you should be using tbb::parallel_for for stuff
         // like this:
         for (auto mesh: model->meshes)
@@ -170,5 +171,17 @@ namespace osc {
 
         knownTextures[textureFileName] = textureID;
         return textureID;
+    }
+
+    int loadEnvmap(Model *model, const std::string &Path) {
+        if (Path == "") return -1;
+        vec2i res;
+        int comp = 0;
+        unsigned char *image = stbi_load(Path.c_str(), &res.x, &res.y, &comp, STBI_rgb_alpha);
+        Texture *texture = new Texture;
+        texture->resolution = res;
+        texture->pixel = (uint32_t *) image;
+        model->envmap = texture;
+        return 1;
     }
 }

@@ -9,6 +9,8 @@ using namespace osc;
 namespace osc {
     enum { SURFACE_RAY_TYPE = 0, RAY_TYPE_COUNT };
 
+    constexpr float PI = 3.1415926535897932f;
+
     typedef gdt::LCG<16> Random;
 
     struct PRD {
@@ -86,10 +88,22 @@ namespace osc {
     extern "C" __global__ void __anyhit__radiance() {
     }
 
+    static __device__ vec2f sampling_equirectangular_map(vec3f dir) {
+        float phi = atan2f(dir.z, dir.x);         // [-π, π]
+        float theta = acosf(clamp(dir.y, -1.f, 1.f)); // [0, π]
+        float u = (phi + PI) / (2.0f * PI);     // [0, 1]
+        float v = theta / PI;                     // [0, 1]
+        return vec2f(u, v);
+    }
+
     extern "C" __global__ void __miss__radiance() {
         Interaction &isec = *(Interaction *) getPRD<Interaction>();
-        isec.mat_color = vec3f(1.0);
         isec.distance = FLT_MAX;
+        const cudaTextureObject_t &sbData = *(const cudaTextureObject_t *) optixGetSbtDataPointer();
+        vec3f rayDir = optixGetWorldRayDirection();
+        vec2f uv = sampling_equirectangular_map(rayDir);
+        vec4f fromTexture = tex2D<float4>(sbData, uv.x, uv.y);
+        isec.mat_color = (vec3f) fromTexture;
     }
 
     extern "C" __global__ void __raygen__renderFrame() {
@@ -138,7 +152,11 @@ namespace osc {
                            SURFACE_RAY_TYPE, // missSBTIndex
                            u0, u1);
                 if (isect.distance == FLT_MAX) {
-                    radiance += vec3f(1.0f) * accum;
+                    if (bounce > 0) {
+                        radiance += isect.mat_color * accum;
+                    } else {
+                        radiance += isect.mat_color * accum /3;
+                    }
                     break;
                 }
                 radiance += 0;

@@ -22,7 +22,7 @@ namespace osc {
         __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
         // just a dummy value - later examples will use more interesting
         // data here
-        void *data;
+        cudaTextureObject_t envmap;
     };
 
     /*! SBT record for a hitgroup program */
@@ -276,7 +276,7 @@ namespace osc {
         for (int i = 0; i < missPrograms.size(); i++) {
             MissRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(missPrograms[i],&rec));
-            rec.data = nullptr; /* for now ... */
+            rec.envmap = textureObjects[model->textures.size()]; /* for now ... */
             missRecords.push_back(rec);
         }
         missRecordsBuffer.alloc_and_upload(missRecords);
@@ -360,11 +360,11 @@ namespace osc {
 
     void SampleRenderer::createTextures() {
         int numTextures = (int) model->textures.size();
-        textureArrays.resize(numTextures);
-        textureObjects.resize(numTextures);
+        textureArrays.resize(numTextures + 1);
+        textureObjects.resize(numTextures + 1);
 
-        for (int textureID = 0; textureID < numTextures; textureID++) {
-            auto texture = model->textures[textureID];
+        for (int textureID = 0; textureID < numTextures + 1; textureID++) {
+            auto texture = textureID < numTextures ? model->textures[textureID] : model->envmap;
 
             cudaResourceDesc res_desc = {};
 

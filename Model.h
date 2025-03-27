@@ -45,10 +45,12 @@ namespace osc {
         std::vector<Texture *> textures;
         //! bounding box of all vertices in the model
         box3f bounds;
+        Texture * envmap;
     };
 
     Model *loadOBJ(const std::string &objFile);
 
-    int loadTexture(Model *model, std::map<std::string, int> &knownTextures, const std::string &textureFileName,
-                    const std::string &modelPath);
+    int loadTexture(Model *model, std::map<std::string, int> &knownTextures, const std::string &textureFileName, const std::string &modelPath);
+
+    int loadEnvmap(Model *model, const std::string &Path);
 }
