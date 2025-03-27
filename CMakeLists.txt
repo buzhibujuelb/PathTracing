@@ -51,6 +51,19 @@ include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+file(GLOB IMGUI_SOURCES
+    3rdParty/imgui/*.cpp
+    3rdParty/imgui/backends/imgui_impl_glfw.cpp
+    3rdParty/imgui/backends/imgui_impl_opengl3.cpp
+)
+
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC
+    3rdParty/imgui
+    3rdParty/imgui/backends
+    3rdParty/glfw/include
+)
+
 cuda_compile_and_embed(embedded_ptx_code devicePrograms.cu)
 
 add_executable(PathTracing
@@ -94,4 +107,5 @@ target_link_libraries(PathTracing PRIVATE
         #cusolver
         #cusparse
         #nvblas
+        imgui
 )

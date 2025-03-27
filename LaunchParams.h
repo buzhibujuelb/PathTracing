@@ -4,7 +4,7 @@
 
 #include <texture_types.h>
 
-#define BMW
+//#define BMW
 #include "gdt/math/vec.h"
 
 namespace osc {
@@ -28,9 +28,9 @@ namespace osc {
         OptixTraversableHandle traversable;
         int numPixelSamples = 10;
         int maxBounce = 10;
-        float lightness_change = 0.25f;
-        float contrast_change = 0.2f;
-        float saturate_change = 0.1f;
+        float lightness_change = 0.f;
+        float contrast_change = 0.f;
+        float saturate_change = 0.f;
         /*
         float lightness_change = 0.25f;
         float contrast_change = 0.2f;

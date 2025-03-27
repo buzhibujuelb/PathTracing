@@ -28,6 +28,8 @@ namespace osc {
 
         void createTextures();
 
+        LaunchParams launchParams;
+
     protected:
         void initOptix();
 
@@ -70,7 +72,6 @@ namespace osc {
 
         OptixShaderBindingTable sbt = {};
 
-        LaunchParams launchParams;
         CUDABuffer launchParamsBuffer;
 
         CUDABuffer colorBuffer;
