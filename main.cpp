@@ -141,7 +141,8 @@ namespace osc {
 #ifdef BMW
             Model *model = loadOBJ("../models/bmw/bmw.obj");
             Camera camera = {
-                /*from*/vec3f(-800, 400, -800), /* at */vec3f(0, 0, 0), /* up */vec3f(0.f, 1.f, 0.f)
+                ///*from*/vec3f(-800, 400, -800), /* at */vec3f(0, 0, 0), /* up */vec3f(0.f, 1.f, 0.f)
+                vec3f(-82.4492,133.559,-155.28),vec3f(37.1697,165.805,11.0188),vec3f(0,1,0)
             };
 
             model->meshes.push_back(new TriangleMesh);
@@ -153,7 +154,8 @@ namespace osc {
 
             Model *model = loadOBJ("../models/sponza/sponza.obj");
             Camera camera = {
-                /*from*/vec3f(-1293.07f, 154.681f, -0.7304f), /* at */model->bounds.center() - vec3f(0, 400, 0),
+                /*from*/vec3f(-1293.07f, 600+154.681f, -0.7304f),
+                /* at */model->bounds.center() - vec3f(0, 400, 0),
                 /* up */vec3f(0.f, 1.f, 0.f)
             };
 #endif

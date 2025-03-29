@@ -27,7 +27,7 @@ namespace osc {
 
         OptixTraversableHandle traversable;
         int numPixelSamples = 10;
-        int maxBounce = 10;
+        int maxBounce = 24;
         float lightness_change = 0.f;
         float contrast_change = 0.f;
         float saturate_change = 0.f;
@@ -36,6 +36,7 @@ namespace osc {
         float contrast_change = 0.2f;
         float saturate_change = -0.2f;
         */
+        bool has_envmap = false;
     };
 
     struct TriangleMeshSBTData {

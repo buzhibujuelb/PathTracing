@@ -348,6 +348,7 @@ namespace osc {
 
     void SampleRenderer::setCamera(const Camera &camera) {
         lastSetCamera = camera;
+        std::cout<< camera.from <<" "<<camera.at<<" "<<camera.up<<"\n";
         launchParams.camera.position = camera.from;
         launchParams.camera.direction = normalize(camera.at - camera.from);
         launchParams.frame.frameID = 0;
@@ -360,10 +361,16 @@ namespace osc {
 
     void SampleRenderer::createTextures() {
         int numTextures = (int) model->textures.size();
-        textureArrays.resize(numTextures + 1);
-        textureObjects.resize(numTextures + 1);
+        launchParams.has_envmap = model->envmap!=nullptr;
+        if (launchParams.has_envmap) {
+            textureArrays.resize(numTextures + 1);
+            textureObjects.resize(numTextures + 1);
+        } else {
+            textureArrays.resize(numTextures);
+            textureObjects.resize(numTextures);
+        }
 
-        for (int textureID = 0; textureID < numTextures + 1; textureID++) {
+        for (int textureID = 0; textureID < numTextures + (launchParams.has_envmap); textureID++) {
             auto texture = textureID < numTextures ? model->textures[textureID] : model->envmap;
 
             cudaResourceDesc res_desc = {};

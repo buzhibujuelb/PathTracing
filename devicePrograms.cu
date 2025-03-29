@@ -83,6 +83,7 @@ namespace osc {
 
         float cosDN = 0.2f + .8f * fabsf(dot(rayDir, N));
         prd.mat_color = cosDN * diffuseColor;
+        prd.mat_color = cosDN ;
     }
 
     extern "C" __global__ void __anyhit__radiance() {
@@ -100,6 +101,10 @@ namespace osc {
         Interaction &isec = *(Interaction *) getPRD<Interaction>();
         isec.distance = FLT_MAX;
         const cudaTextureObject_t &sbData = *(const cudaTextureObject_t *) optixGetSbtDataPointer();
+        if (!sbData) {
+            isec.mat_color = vec3f(1);
+            return ;
+        }
         vec3f rayDir = optixGetWorldRayDirection();
         vec2f uv = sampling_equirectangular_map(rayDir);
         vec4f fromTexture = tex2D<float4>(sbData, uv.x, uv.y);
@@ -152,7 +157,7 @@ namespace osc {
                            SURFACE_RAY_TYPE, // missSBTIndex
                            u0, u1);
                 if (isect.distance == FLT_MAX) {
-                    if (bounce > 0) {
+                    if (bounce > 0 || !optixLaunchParams.has_envmap) {
                         radiance += isect.mat_color * accum;
                     } else {
                         radiance += isect.mat_color * accum /3;
