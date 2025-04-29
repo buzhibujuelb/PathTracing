@@ -15,8 +15,5 @@ struct Material {
     vec3f emitter = 0;
     int diffuseTextureID = -1;
     cudaTextureObject_t diffuseTexture;
-    /*
     float roughness;
-    float ior;
-     */
 };

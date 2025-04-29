@@ -303,7 +303,8 @@ namespace osc {
                 rec.data.mat = mesh->mat;
             } else {
                 rec.data.mat.diffuse = vec3f(0.5, 1, 0.5);
-                rec.data.mat.type = DIFFUSE;
+                rec.data.mat.type = METAL;
+                rec.data.mat.roughness = 0.1;
             }
 #else
             rec.data.mat = mesh->mat;

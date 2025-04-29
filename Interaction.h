@@ -22,6 +22,7 @@ struct Interaction {
     vec3f geoNormal;
     vec3f realNormal;
     vec2f texcoord;
+    float roughness;
     cudaTextureObject_t texture;
     Material mat;
 

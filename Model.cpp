@@ -95,7 +95,7 @@ namespace osc {
             std::map<tinyobj::index_t, int> knownVertices;
             std::map<std::string, int> knownTextures;
 
-            if (matType == DIFFUSE && materials.empty()) {
+            if (materials.empty()) {
                 throw std::runtime_error("could not parse materials ...");
             }
 
@@ -113,11 +113,22 @@ namespace osc {
                               addVertex(mesh, attributes, idx1, knownVertices),
                               addVertex(mesh, attributes, idx2, knownVertices));
                     mesh->index.push_back(idx);
-                    if (matType == DIFFUSE) {
-                        mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
-                        mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
-                                                                 materials[materialID].diffuse_texname,
-                                                                 modelDir);
+                    switch (matType) {
+                        case DIFFUSE: {
+                            mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
+                            mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
+                                                                     materials[materialID].diffuse_texname,
+                                                                     modelDir);
+                            break;
+                        }
+                        case METAL: {
+                            mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
+                            mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
+                                                                     materials[materialID].diffuse_texname,
+                                                                     modelDir);
+                            mesh->mat.roughness = (1000 - (const float &) materials[materialID].shininess) / 1000.0f;
+                            break;
+                        }
                     }
                     mesh->mat.type = matType;
                 }

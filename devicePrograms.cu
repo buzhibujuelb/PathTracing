@@ -64,6 +64,7 @@ namespace osc {
 
         isect.position = (1 - u - v) * A + u * B + v * C;
         isect.geoNormal = N;
+        isect.roughness = sbtData.mat.roughness;
 
         if (sbtData.texcoord) {
             isect.texcoord = (1 - u - v) * sbtData.texcoord[index.x] + u * sbtData.texcoord[index.y] + v * sbtData.

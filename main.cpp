@@ -139,7 +139,7 @@ namespace osc {
     extern "C" int main(int ac, char **av) {
         try {
 #ifdef BMW
-            Model *model = loadOBJ("../models/bmw/bmw.obj", DIFFUSE);
+            Model *model = loadOBJ("../models/bmw/bmw.obj", METAL);
             Camera camera = {
                 /*from*/vec3f(-800, 400, -800), /* at */vec3f(0, 0, 0), /* up */vec3f(0.f, 1.f, 0.f)
             };
@@ -151,7 +151,7 @@ namespace osc {
             (model->meshes.back())->addCube(vec3f(000.f, 160.f, 400.f), vec3f(800.f, 340.f, 10.f));
 #else
 
-            Model *model = loadOBJ("../models/sponza/sponza.obj", DIFFUSE);
+            Model *model = loadOBJ("../models/sponza/sponza.obj", METAL);
             Camera camera = {
                 /*from*/vec3f(-1293.07f,  154.681f, -0.7304f),
                 /* at */model->bounds.center() - vec3f(0, 400, 0),
