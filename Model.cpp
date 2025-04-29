@@ -56,7 +56,7 @@ namespace osc {
         return newID;
     }
 
-    Model *loadOBJ(const std::string &objFile) {
+    Model *loadOBJ(const std::string &objFile, MaterialType matType) {
         Model *model = new Model;
 
         const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
@@ -95,7 +95,12 @@ namespace osc {
             std::map<tinyobj::index_t, int> knownVertices;
             std::map<std::string, int> knownTextures;
 
+            if (matType == DIFFUSE && materials.empty()) {
+                throw std::runtime_error("could not parse materials ...");
+            }
+
             for (int materialID: materialIDs) {
+                if (materialID == -1) continue;
                 TriangleMesh *mesh = new TriangleMesh;
 
                 for (int faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++) {
@@ -108,9 +113,13 @@ namespace osc {
                               addVertex(mesh, attributes, idx1, knownVertices),
                               addVertex(mesh, attributes, idx2, knownVertices));
                     mesh->index.push_back(idx);
-                    mesh->diffuse = (const vec3f &) materials[materialID].diffuse;
-                    mesh->diffuseTextureID = loadTexture(model, knownTextures, materials[materialID].diffuse_texname,
-                                                         modelDir);
+                    if (matType == DIFFUSE) {
+                        mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
+                        mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
+                                                                 materials[materialID].diffuse_texname,
+                                                                 modelDir);
+                    }
+                    mesh->mat.type = matType;
                 }
 
                 if (mesh->vertex.empty())
@@ -135,7 +144,7 @@ namespace osc {
                     const std::string &modelPath) {
         if (knownTextures.find(textureFileName) != knownTextures.end())
             return knownTextures[textureFileName];
-        if (textureFileName == "") return -1;
+        if (textureFileName.empty()) return -1;
 
         std::string fileName = textureFileName;
         // first, fix backspaces:

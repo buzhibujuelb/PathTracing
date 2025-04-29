@@ -79,6 +79,7 @@ add_executable(PathTracing
     Model.cpp
         Interaction.h
         PostProcess.h
+        Material.h
 )
 
 # 添加 CUDA 编译器配置

@@ -7,6 +7,7 @@
 #include "gdt/math/AffineSpace.h"
 #include <vector>
 #include <map>
+#include <Material_def.h>
 
 /*! \namespace osc - Optix Siggraph Course */
 namespace osc {
@@ -21,8 +22,7 @@ namespace osc {
         std::vector<vec3i> index;
 
         // material data:
-        vec3f diffuse;
-        int diffuseTextureID{-1};
+        Material mat;
 
         void addCube(const vec3f &center, const vec3f &size);
 
@@ -45,12 +45,13 @@ namespace osc {
         std::vector<Texture *> textures;
         //! bounding box of all vertices in the model
         box3f bounds;
-        Texture * envmap=nullptr;
+        Texture *envmap = nullptr;
     };
 
-    Model *loadOBJ(const std::string &objFile);
+    Model *loadOBJ(const std::string &objFile, MaterialType matType);
 
-    int loadTexture(Model *model, std::map<std::string, int> &knownTextures, const std::string &textureFileName, const std::string &modelPath);
+    int loadTexture(Model *model, std::map<std::string, int> &knownTextures, const std::string &textureFileName,
+                    const std::string &modelPath);
 
     int loadEnvmap(Model *model, const std::string &Path);
 }

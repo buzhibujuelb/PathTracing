@@ -2,6 +2,7 @@
 // Created by bei on 25-3-26.
 //
 
+#pragma once
 #include "gdt/math/vec.h"
 #include "LaunchParams.h"
 #include "math.h"
@@ -19,7 +20,10 @@ struct Interaction {
     float distance = 0;
     vec3f position;
     vec3f geoNormal;
-    vec3f mat_color;
+    vec3f realNormal;
+    vec2f texcoord;
+    cudaTextureObject_t texture;
+    Material mat;
 
     __forceinline__ __device__ Ray spawnRay(const vec3f &wi) {
         vec3f N = geoNormal;

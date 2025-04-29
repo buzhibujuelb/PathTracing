@@ -3,22 +3,14 @@
 #include "gdt/random/random.h"
 #include "Interaction.h"
 #include "PostProcess.h"
+#include "Material.h"
 
 using namespace osc;
 
 namespace osc {
     enum { SURFACE_RAY_TYPE = 0, RAY_TYPE_COUNT };
 
-    constexpr float PI = 3.1415926535897932f;
-
-    typedef gdt::LCG<16> Random;
-
-    struct PRD {
-        Random random;
-        vec3f pixelColor;
-        vec3f pixelNormal;
-        vec3f pixelAlbedo;
-    };
+    __device__ __constant__ float PI = 3.1415926535897932f;
 
     static __forceinline__ __device__
     void *unpackPointer(uint32_t i0, uint32_t i1) {
@@ -45,7 +37,7 @@ namespace osc {
 
     extern "C" __global__ void __closesthit__radiance() {
         const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *) optixGetSbtDataPointer();
-        Interaction &prd = *(Interaction *) getPRD<Interaction>();
+        Interaction &isect = *(Interaction *) getPRD<Interaction>();
         const int primID = optixGetPrimitiveIndex();
         const vec3i index = sbtData.index[primID];
         const float u = optixGetTriangleBarycentrics().x;
@@ -70,30 +62,34 @@ namespace osc {
         const vec3f rayDir = optixGetWorldRayDirection();
         if (dot(N, rayDir) > 0) N = -N;
 
-        prd.position = (1 - u - v) * A + u * B + v * C;
-        prd.geoNormal = N;
-        vec3f diffuseColor = sbtData.color;
+        isect.position = (1 - u - v) * A + u * B + v * C;
+        isect.geoNormal = N;
 
-        if (sbtData.hasTexture && sbtData.texcoord) {
-            const vec2f tc = (1 - u - v) * sbtData.texcoord[index.x] + u * sbtData.texcoord[index.y] + v * sbtData.
+        if (sbtData.texcoord) {
+            isect.texcoord = (1 - u - v) * sbtData.texcoord[index.x] + u * sbtData.texcoord[index.y] + v * sbtData.
                              texcoord[index.z];
-            vec4f fromTexture = tex2D<float4>(sbtData.texture, tc.x, tc.y);
-            diffuseColor *= (vec3f) fromTexture;
         }
 
+        isect.mat = sbtData.mat;
+        //isect.texture = sbtData.texture;
+
+        /*
+        vec3f diffuseColor = sbtData.mat.diffuse;
+            vec4f fromTexture = tex2D<float4>(sbtData.texture, tc.x, tc.y);
+            diffuseColor *= (vec3f) fromTexture;
         float cosDN = 0.2f + .8f * fabsf(dot(rayDir, N));
         prd.mat_color = cosDN * diffuseColor;
-        prd.mat_color = cosDN ;
+        */
     }
 
     extern "C" __global__ void __anyhit__radiance() {
     }
 
     static __device__ vec2f sampling_equirectangular_map(vec3f dir) {
-        float phi = atan2f(dir.z, dir.x);         // [-π, π]
+        float phi = atan2f(dir.z, dir.x); // [-π, π]
         float theta = acosf(clamp(dir.y, -1.f, 1.f)); // [0, π]
-        float u = (phi + PI) / (2.0f * PI);     // [0, 1]
-        float v = theta / PI;                     // [0, 1]
+        float u = (phi + PI) / (2.0f * PI); // [0, 1]
+        float v = theta / PI; // [0, 1]
         return vec2f(u, v);
     }
 
@@ -102,13 +98,13 @@ namespace osc {
         isec.distance = FLT_MAX;
         const cudaTextureObject_t &sbData = *(const cudaTextureObject_t *) optixGetSbtDataPointer();
         if (!sbData) {
-            isec.mat_color = vec3f(1);
-            return ;
+            isec.mat.emitter = vec3f(1);
+            return;
         }
         vec3f rayDir = optixGetWorldRayDirection();
         vec2f uv = sampling_equirectangular_map(rayDir);
         vec4f fromTexture = tex2D<float4>(sbData, uv.x, uv.y);
-        isec.mat_color = (vec3f) fromTexture;
+        isec.mat.emitter = (vec3f) fromTexture;
     }
 
     extern "C" __global__ void __raygen__renderFrame() {
@@ -120,8 +116,6 @@ namespace osc {
         const int numPixelSamples = optixLaunchParams.numPixelSamples;
 
         vec3f pixelColor = 0.f;
-        PRD prd;
-        prd.random.init(ix + optixLaunchParams.frame.size.x * iy, optixLaunchParams.frame.frameID);
 
         const vec2f screen(vec2f(ix + 0.5f, iy + 0.5f) / vec2f(optixLaunchParams.frame.size));
 
@@ -158,21 +152,21 @@ namespace osc {
                            u0, u1);
                 if (isect.distance == FLT_MAX) {
                     if (bounce > 0 || !optixLaunchParams.has_envmap) {
-                        radiance += isect.mat_color * accum;
+                        radiance += isect.mat.emitter * accum;
                     } else {
-                        radiance += isect.mat_color * accum /3;
+                        radiance += isect.mat.emitter * accum / 3;
                     }
                     break;
                 }
-                radiance += 0;
-                accum *= isect.mat_color;
-                vec3f wi;
-                vec3f rnd;
-                rnd.x = prd.random() * 2 - 1;
-                rnd.y = prd.random() * 2 - 1;
-                rnd.z = prd.random() * 2 - 1;
-                wi = normalize(isect.geoNormal + normalize(rnd));
-                ray = isect.spawnRay(wi);
+                radiance += isect.mat.emitter * accum;
+                vec3f wo;
+                float pdf = 0.f;
+                vec3f bsdf = cal_bsdf(isect, ray.direction, wo, pdf, ix, iy, optixLaunchParams.frame.frameID);
+                float cosine = fabsf(dot(isect.geoNormal, ray.direction));
+
+                accum *= bsdf * cosine / pdf;
+                //printf("accum*=(%.2f,%.2f,%.2f) *%.2f/%.2f\n", bsdf.x,bsdf.y,bsdf.z, cosine, pdf);
+                ray = isect.spawnRay(wo);
                 //printf("sample %d: radiance = %.2f %.2f %.2f\n", sampleID, radiance.x, radiance.y, radiance.z);
             }
             pixelColor += radiance;

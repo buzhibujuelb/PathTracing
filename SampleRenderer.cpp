@@ -298,17 +298,19 @@ namespace osc {
             int objectType = 0;
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPrograms[objectType],&rec));
-            if (mesh->diffuseTextureID >= 0) {
-                rec.data.hasTexture = true;
-                rec.data.texture = textureObjects[mesh->diffuseTextureID];
-            } else {
-                rec.data.hasTexture = false;
-            }
 #ifdef BMW
-            rec.data.color = meshID < numObjects - 1 ? mesh->diffuse : vec3f(0.5, 1, 0.5);
+            if (meshID < numObjects - 1) {
+                rec.data.mat = mesh->mat;
+            } else {
+                rec.data.mat.diffuse = vec3f(0.5, 1, 0.5);
+                rec.data.mat.type = DIFFUSE;
+            }
 #else
-            rec.data.color = mesh->diffuse ;
+            rec.data.mat = mesh->mat;
 #endif
+            if (mesh->mat.diffuseTextureID >= 0) {
+                rec.data.mat.diffuseTexture = textureObjects[mesh->mat.diffuseTextureID];
+            }
             rec.data.vertex = (vec3f *) vertexBuffer[meshID].d_pointer();
             rec.data.index = (vec3i *) indexBuffer[meshID].d_pointer();
             rec.data.normal = (vec3f *) normalBuffer[meshID].d_pointer();
@@ -348,7 +350,7 @@ namespace osc {
 
     void SampleRenderer::setCamera(const Camera &camera) {
         lastSetCamera = camera;
-        std::cout<< camera.from <<" "<<camera.at<<" "<<camera.up<<"\n";
+        std::cout << camera.from << " " << camera.at << " " << camera.up << "\n";
         launchParams.camera.position = camera.from;
         launchParams.camera.direction = normalize(camera.at - camera.from);
         launchParams.frame.frameID = 0;
@@ -361,7 +363,7 @@ namespace osc {
 
     void SampleRenderer::createTextures() {
         int numTextures = (int) model->textures.size();
-        launchParams.has_envmap = model->envmap!=nullptr;
+        launchParams.has_envmap = model->envmap != nullptr;
         if (launchParams.has_envmap) {
             textureArrays.resize(numTextures + 1);
             textureObjects.resize(numTextures + 1);
