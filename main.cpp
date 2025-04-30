@@ -151,12 +151,25 @@ namespace osc {
             (model->meshes.back())->addCube(vec3f(000.f, 160.f, 400.f), vec3f(800.f, 340.f, 10.f));
 #else
 
+            /*
             Model *model = loadOBJ("../models/sponza/sponza.obj", METAL);
             Camera camera = {
-                /*from*/vec3f(-1293.07f,  154.681f, -0.7304f),
-                /* at */model->bounds.center() - vec3f(0, 400, 0),
-                /* up */vec3f(0.f, 1.f, 0.f)
+                vec3f(-1293.07f,  154.681f, -0.7304f),
+                model->bounds.center() - vec3f(0, 400, 0),
+                vec3f(0.f, 1.f, 0.f)
             };
+            Model *model = loadOBJ("../models/CornellBox/CornellBox-Mirror.obj", DIFFUSE);
+            Camera camera = {
+                vec3f(0.0466101,1.09796,4.12168),
+                vec3f(0, 1, 0),
+                vec3f(0.f, 1.f, 0.f)
+            };}
+            Model *model = loadOBJ("../models/test/test.obj", METAL);
+            Camera camera = {vec3f(0, 3, 10), vec3f(0, 0, 1), vec3f(0.f, 1.f, 0.f)};
+            */
+
+            Model *model = loadOBJ("../models/test2/test2.obj", DIELECTRIC);
+            Camera camera = {vec3f(0, 1, -3), vec3f(0, 0, 0), vec3f(0.f, 1.f, 0.f)};
 #endif
 
 

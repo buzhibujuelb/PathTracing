@@ -129,6 +129,16 @@ namespace osc {
                             mesh->mat.roughness = (1000 - (const float &) materials[materialID].shininess) / 1000.0f;
                             break;
                         }
+                        case DIELECTRIC: {
+                            mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
+                            mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
+                                                                     materials[materialID].diffuse_texname,
+                                                                     modelDir);
+                            mesh->mat.roughness = (1000 - (const float &) materials[materialID].shininess) / 1000.0f;
+                            mesh->mat.ior = (const float &) materials[materialID].ior;
+                            mesh->mat.transparent = (const float &) materials[materialID].transmittance[0];
+                            break;
+                        }
                     }
                     mesh->mat.type = matType;
                 }
