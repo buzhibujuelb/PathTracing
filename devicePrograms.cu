@@ -165,6 +165,52 @@ namespace osc {
                 vec3f bsdf = cal_bsdf(isect, ray.direction, wo, pdf, ix, iy, optixLaunchParams.frame.frameID);
                 float cosine = fabsf(dot(isect.geoNormal, ray.direction));
 
+                // ===== 直接光采样 begin =====
+                if (optixLaunchParams.numLightTriangles > 0) {
+                    PRD prd;
+                    uint64_t seed = ((uint64_t) (ix) * 1973 + (uint64_t) (iy) * 9277 + optixLaunchParams.frame.frameID *
+                                     26699) | 1;
+                    prd.random.init(seed, seed ^ 0xdeadbeef);
+
+                    LightSample ls = sample_light(optixLaunchParams.lightTriangles, optixLaunchParams.numLightTriangles,
+                                                  prd.random);
+                    vec3f toLight = ls.position - isect.position;
+                    float dist2 = dot(toLight, toLight);
+                    vec3f wi = normalize(toLight);
+
+                    // shadow ray 检查遮挡
+                    bool visible = true; {
+                        Interaction shadowIsect;
+                        uint32_t su0, su1;
+                        packPointer(&shadowIsect, su0, su1);
+                        optixTrace(optixLaunchParams.traversable,
+                                   isect.position + isect.geoNormal * 1e-4f,
+                                   wi,
+                                   1e-4f,
+                                   sqrtf(dist2) - 1e-4f,
+                                   0.0f,
+                                   OptixVisibilityMask(255),
+                                   OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+                                   SURFACE_RAY_TYPE,
+                                   RAY_TYPE_COUNT,
+                                   SURFACE_RAY_TYPE,
+                                   su0, su1);
+                        if (shadowIsect.distance < FLT_MAX - 1) visible = false;
+                    }
+
+                    if (visible) {
+                        float cosTheta = max(0.f, dot(isect.geoNormal, wi));
+                        float cosLight = max(0.f, dot(ls.normal, -wi));
+                        float geometry = cosTheta * cosLight / dist2;
+                        float pdf_bsdf;
+                        vec3f wo_dummy;
+                        vec3f bsdf_light = cal_bsdf(isect, wi, wo_dummy, pdf_bsdf, ix, iy,
+                                                    optixLaunchParams.frame.frameID);
+                        radiance += ls.emission * bsdf_light * geometry / ls.pdf * accum;
+                    }
+                }
+                // ===== 直接光采样 end =====
+
                 accum *= bsdf * cosine / pdf;
                 //printf("accum*=(%.2f,%.2f,%.2f) *%.2f/%.2f\n", bsdf.x,bsdf.y,bsdf.z, cosine, pdf);
                 ray = isect.spawnRay(wo);

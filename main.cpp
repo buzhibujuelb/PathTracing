@@ -51,7 +51,6 @@ namespace osc {
             glfwSetWindowSize(handle, defaultWidth, defaultHeight);
             fbSize = vec2i(defaultWidth, defaultHeight);
             resize(fbSize);
-
         }
 
         void mouseButton(int button, int action, int mods) override {
@@ -166,17 +165,20 @@ namespace osc {
                 model->bounds.center() - vec3f(0, 400, 0),
                 vec3f(0.f, 1.f, 0.f)
             };
-            Model *model = loadOBJ("../models/CornellBox/CornellBox-Mirror.obj", DIFFUSE);
+            */
+            Model *model = loadOBJ("../models/CornellBox/CornellBox-Mirror.obj", METAL);
             Camera camera = {
-                vec3f(0.0466101,1.09796,4.12168),
+                vec3f(0, 1, 6),
                 vec3f(0, 1, 0),
                 vec3f(0.f, 1.f, 0.f)
-            };}
-            Model *model = loadOBJ("../models/test/test.obj", METAL);
-            Camera camera = {vec3f(0, 3, 10), vec3f(0, 0, 1), vec3f(0.f, 1.f, 0.f)};
-            */
+            };
+            /*
+                Model *model = loadOBJ("../models/test/test.obj", METAL);
+                Camera camera = {vec3f(0, 3, 10), vec3f(0, 0, 1), vec3f(0.f, 1.f, 0.f)};
+                */
 
-            Model *model = loadOBJ("../models/test2/test2.obj", DIELECTRIC);
+            /*
+            Model *model = loadOBJ("../models/test2/test2.obj", DIFFUSE);
             // Convert Blender camera (Z-up) to renderer camera (Y-up)
             // Blender camera at (0, 4, 2) with forward (-0.0000, -0.9063, -0.4226)
             // 注意：Blender 使用右手坐标系，我们使用左手坐标系
@@ -187,6 +189,7 @@ namespace osc {
                 vec3f(0.0f, -0.4226f, 0.9063f),    // Forward direction converted
                 vec3f(0.0f, 1.0f, 0.0f)     // Y-up
             };
+            */
 #endif
 
 

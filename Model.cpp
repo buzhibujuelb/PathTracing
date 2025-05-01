@@ -113,34 +113,15 @@ namespace osc {
                               addVertex(mesh, attributes, idx1, knownVertices),
                               addVertex(mesh, attributes, idx2, knownVertices));
                     mesh->index.push_back(idx);
-                    switch (matType) {
-                        case DIFFUSE: {
-                            mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
-                            mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
-                                                                     materials[materialID].diffuse_texname,
-                                                                     modelDir);
-                            break;
-                        }
-                        case METAL: {
-                            mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
-                            mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
-                                                                     materials[materialID].diffuse_texname,
-                                                                     modelDir);
-                            mesh->mat.roughness = (1000 - (const float &) materials[materialID].shininess) / 1000.0f;
-                            break;
-                        }
-                        case DIELECTRIC: {
-                            mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
-                            mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
-                                                                     materials[materialID].diffuse_texname,
-                                                                     modelDir);
-                            mesh->mat.roughness = (1000 - (const float &) materials[materialID].shininess) / 1000.0f;
-                            mesh->mat.ior = (const float &) materials[materialID].ior;
-                            mesh->mat.transparent = (const float &) materials[materialID].transmittance[0];
-                            break;
-                        }
-                    }
+                    mesh->mat.diffuse = (const vec3f &) materials[materialID].diffuse;
+                    mesh->mat.diffuseTextureID = loadTexture(model, knownTextures,
+                                                             materials[materialID].diffuse_texname,
+                                                             modelDir);
+                    mesh->mat.roughness = (1000 - (const float &) materials[materialID].shininess) / 1000.0f;
+                    mesh->mat.ior = (const float &) materials[materialID].ior;
+                    mesh->mat.transparent = (const float &) materials[materialID].transmittance[0];
                     mesh->mat.type = matType;
+                    mesh->mat.emitter = (const vec3f &) materials[materialID].emission;
                 }
 
                 if (mesh->vertex.empty())

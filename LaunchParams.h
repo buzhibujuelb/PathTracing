@@ -13,6 +13,13 @@
 namespace osc {
     using namespace gdt;
 
+    struct LightTriangle {
+        vec3f v0, v1, v2;
+        vec3f normal;
+        vec3f emission;
+        float area;
+    };
+
     struct LaunchParams {
         struct {
             int frameID;
@@ -40,6 +47,8 @@ namespace osc {
         float saturate_change = -0.2f;
         */
         bool has_envmap = false;
+        LightTriangle *lightTriangles = nullptr; // device指针
+        int numLightTriangles = 0;
     };
 
     struct TriangleMeshSBTData {

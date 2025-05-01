@@ -62,6 +62,31 @@ namespace osc {
         std::cout << "#osc: building SBT ..." << std::endl;
         buildSBT();
 
+        // 收集所有光源三角面片并上传到GPU
+        std::vector<osc::LightTriangle> lightTriangles;
+        for (const auto &mesh: model->meshes) {
+            if (mesh->mat.emitter == vec3f(0.f)) continue;
+            for (const auto &idx: mesh->index) {
+                osc::LightTriangle tri;
+                tri.v0 = mesh->vertex[idx.x];
+                tri.v1 = mesh->vertex[idx.y];
+                tri.v2 = mesh->vertex[idx.z];
+                tri.normal = normalize(cross(tri.v1 - tri.v0, tri.v2 - tri.v0));
+                tri.emission = mesh->mat.emitter;
+                tri.area = length(cross(tri.v1 - tri.v0, tri.v2 - tri.v0)) * 0.5f;
+                lightTriangles.push_back(tri);
+            }
+        }
+        static CUDABuffer lightTrianglesBuffer;
+        if (!lightTriangles.empty()) {
+            lightTrianglesBuffer.alloc_and_upload(lightTriangles);
+            launchParams.lightTriangles = (osc::LightTriangle *) lightTrianglesBuffer.d_pointer();
+            launchParams.numLightTriangles = (int) lightTriangles.size();
+        } else {
+            launchParams.lightTriangles = nullptr;
+            launchParams.numLightTriangles = 0;
+        }
+
         launchParamsBuffer.alloc(sizeof(launchParams));
         std::cout << "#osc: context, module, pipeline, etc, all set up ..." << std::endl;
 
@@ -365,15 +390,15 @@ namespace osc {
         // 设置水平 FOV 为 39.6 度（Blender 相机的水平 FOV）
         const float fovHorizontalDegrees = 39.6f;
         const float fovHorizontalRadians = fovHorizontalDegrees * (M_PI / 180.0f);
-        
+
         // 计算水平和垂直方向的缩放因子
         const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
         const float tanHalfFovHorizontal = tanf(fovHorizontalRadians * 0.5f);
-        
+
         // 水平方向的缩放
         launchParams.camera.horizontal = normalize(cross(launchParams.camera.direction, camera.up));
         launchParams.camera.horizontal *= 2.0f * tanHalfFovHorizontal;
-        
+
         // 垂直方向的缩放（根据屏幕比例自动调整）
         launchParams.camera.vertical = normalize(cross(launchParams.camera.horizontal, launchParams.camera.direction));
         launchParams.camera.vertical *= (2.0f * tanHalfFovHorizontal) / aspect;
