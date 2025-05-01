@@ -352,14 +352,31 @@ namespace osc {
     void SampleRenderer::setCamera(const Camera &camera) {
         lastSetCamera = camera;
         std::cout << camera.from << " " << camera.at << " " << camera.up << "\n";
+
+        // 设置默认分辨率为 1920x1080
+        if (launchParams.frame.size.x == 0 || launchParams.frame.size.y == 0) {
+            launchParams.frame.size = vec2i(1920, 1080);
+        }
+
         launchParams.camera.position = camera.from;
         launchParams.camera.direction = normalize(camera.at - camera.from);
         launchParams.frame.frameID = 0;
-        const float cosFovy = 0.66f;
+
+        // 设置水平 FOV 为 39.6 度（Blender 相机的水平 FOV）
+        const float fovHorizontalDegrees = 39.6f;
+        const float fovHorizontalRadians = fovHorizontalDegrees * (M_PI / 180.0f);
+        
+        // 计算水平和垂直方向的缩放因子
         const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
-        launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.up));
-        launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal,
-                                                                 launchParams.camera.direction));
+        const float tanHalfFovHorizontal = tanf(fovHorizontalRadians * 0.5f);
+        
+        // 水平方向的缩放
+        launchParams.camera.horizontal = normalize(cross(launchParams.camera.direction, camera.up));
+        launchParams.camera.horizontal *= 2.0f * tanHalfFovHorizontal;
+        
+        // 垂直方向的缩放（根据屏幕比例自动调整）
+        launchParams.camera.vertical = normalize(cross(launchParams.camera.horizontal, launchParams.camera.direction));
+        launchParams.camera.vertical *= (2.0f * tanHalfFovHorizontal) / aspect;
     }
 
     void SampleRenderer::createTextures() {

@@ -5,7 +5,7 @@
 #pragma once
 #include <texture_types.h>
 
-#define BMW
+//#define BMW
 #include <Material_def.h>
 
 #include "gdt/math/vec.h"

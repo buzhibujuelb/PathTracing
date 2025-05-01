@@ -44,6 +44,14 @@ namespace osc {
             ImGui_ImplGlfw_InitForOpenGL(handle, true); // <-- 你需要传入你的 GLFWwindow*
             ImGui_ImplOpenGL3_Init("#version 130");
             glfwSetInputMode(handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+            // 设置默认窗口大小为 1920x1080
+            const int defaultWidth = 1920;
+            const int defaultHeight = 1080;
+            glfwSetWindowSize(handle, defaultWidth, defaultHeight);
+            fbSize = vec2i(defaultWidth, defaultHeight);
+            resize(fbSize);
+
         }
 
         void mouseButton(int button, int action, int mods) override {
@@ -169,7 +177,16 @@ namespace osc {
             */
 
             Model *model = loadOBJ("../models/test2/test2.obj", DIELECTRIC);
-            Camera camera = {vec3f(0, 1, -3), vec3f(0, 0, 0), vec3f(0.f, 1.f, 0.f)};
+            // Convert Blender camera (Z-up) to renderer camera (Y-up)
+            // Blender camera at (0, 4, 2) with forward (-0.0000, -0.9063, -0.4226)
+            // 注意：Blender 使用右手坐标系，我们使用左手坐标系
+            // 转换规则：
+            // Blender (x, y, z) -> Renderer (x, z, -y)
+            Camera camera = {
+                vec3f(0.0f, 2.0f, -4.0f),    // Blender (0,4,2) -> Renderer (0,2,-4)
+                vec3f(0.0f, -0.4226f, 0.9063f),    // Forward direction converted
+                vec3f(0.0f, 1.0f, 0.0f)     // Y-up
+            };
 #endif
 
 

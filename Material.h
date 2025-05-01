@@ -135,12 +135,12 @@ __forceinline__ __device__ vec3f cal_bsdf(const Interaction &isect, const vec3f 
                                           const int ix, const int iy, const int frame_id) {
     vec3f result;
     PRD prd;
+    uint64_t seed = ((uint64_t) (ix) * 1973 + (uint64_t) (iy) * 9277 + frame_id * 26699) | 1;
     switch (isect.mat.type) {
         case DIFFUSE:
             result = cal_diffuse_bsdf(isect, wi, wo, pdf, ix, iy, frame_id);
             break;
         case METAL:
-            uint64_t seed = ((uint64_t) (ix) * 1973 + (uint64_t) (iy) * 9277 + frame_id * 26699) | 1;
             prd.random.init(seed, seed ^ 0xdeadbeef);
             if ((float)prd.random() < isect.mat.roughness)
                 result = cal_diffuse_bsdf(isect, wi, wo, pdf, ix, iy, frame_id);
