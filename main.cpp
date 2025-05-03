@@ -1,5 +1,6 @@
 #include "SampleRenderer.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <chrono>
 #include <imgui_impl_opengl3.h>
 
 #include "3rdParty/stb_image_write.h"
@@ -145,10 +146,12 @@ namespace osc {
       world, then exit */
     extern "C" int main(int ac, char **av) {
         try {
+            using namespace std::chrono;
+            auto app_start = high_resolution_clock::now();
 #ifdef BMW
             Model *model = loadOBJ("../models/bmw/bmw.obj", METAL);
             Camera camera = {
-                /*from*/vec3f(-800, 400, -800), /* at */vec3f(0, 0, 0), /* up */vec3f(0.f, 1.f, 0.f)
+                /*from*/vec3f(-1200, 350, -1200), /* at */vec3f(0, 0, 0), /* up */vec3f(0.f, 1.f, 0.f)
             };
 
             model->meshes.push_back(new TriangleMesh);
@@ -165,19 +168,20 @@ namespace osc {
                 model->bounds.center() - vec3f(0, 400, 0),
                 vec3f(0.f, 1.f, 0.f)
             };
+
             */
-            Model *model = loadOBJ("../models/CornellBox/CornellBox-Mirror.obj", METAL);
+            Model *model = loadOBJ("../models/CornellBox/CornellBox-Original.obj", DIFFUSE);
             Camera camera = {
                 vec3f(0, 1, 6),
                 vec3f(0, 1, 0),
                 vec3f(0.f, 1.f, 0.f)
             };
             /*
-                Model *model = loadOBJ("../models/test/test.obj", METAL);
-                Camera camera = {vec3f(0, 3, 10), vec3f(0, 0, 1), vec3f(0.f, 1.f, 0.f)};
-                */
 
-            /*
+            Model *model = loadOBJ("../models/test/test.obj", METAL);
+            Camera camera = {vec3f(0, 1, 10), vec3f(0, 0, 1), vec3f(0.f, 1.f, 0.f)};
+
+
             Model *model = loadOBJ("../models/test2/test2.obj", DIFFUSE);
             // Convert Blender camera (Z-up) to renderer camera (Y-up)
             // Blender camera at (0, 4, 2) with forward (-0.0000, -0.9063, -0.4226)
@@ -190,8 +194,12 @@ namespace osc {
                 vec3f(0.0f, 1.0f, 0.0f)     // Y-up
             };
             */
-#endif
 
+#endif
+            auto app_end = high_resolution_clock::now();
+        std::cout << "[Startup Time] "
+                  << duration_cast<milliseconds>(app_end - app_start).count()
+                  << " ms" << std::endl;
 
             const float worldScale = length(model->bounds.span());
             SampleWindow *window = new SampleWindow("PathTracing", model, camera, worldScale);

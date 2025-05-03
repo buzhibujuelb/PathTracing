@@ -3,6 +3,8 @@
 //
 
 #include "SampleRenderer.h"
+
+#include <chrono>
 #include<optix_function_table_definition.h>
 
 /*! \namespace osc - Optix Siggraph Course */
@@ -328,8 +330,8 @@ namespace osc {
                 rec.data.mat = mesh->mat;
             } else {
                 rec.data.mat.diffuse = vec3f(0.5, 1, 0.5);
-                rec.data.mat.type = DIELECTRIC;
-                rec.data.mat.roughness = 0.1;
+                rec.data.mat.type = METAL;
+                rec.data.mat.roughness = 0.2;
             }
 #else
             rec.data.mat = mesh->mat;
@@ -352,6 +354,15 @@ namespace osc {
     void SampleRenderer::render() {
         // sanity check: make sure we launch only after first resize is
         // already done:
+        using namespace std::chrono;
+        auto start = high_resolution_clock::now();
+
+        static int frameCount = 0;
+        static double totalFrameTime = 0;
+
+        if (launchParams.frame.frameID == 0) {
+            std::cout << "[Render Info] Launching first frame...\n";
+        }
         if (launchParams.frame.size.x == 0) return;
         launchParamsBuffer.upload(&launchParams, 1);
         launchParams.frame.frameID++;
@@ -372,11 +383,24 @@ namespace osc {
         // want to use streams and double-buffering, but for this simple
         // example, this will have to do)
         CUDA_SYNC_CHECK();
+
+        auto end = high_resolution_clock::now();
+        double frameTime = duration_cast<microseconds>(end - start).count() / 1000.0; // in ms
+
+        totalFrameTime += frameTime;
+        frameCount++;
+
+        if (frameCount % 10 == 0) {
+            std::cout << "[Render Benchmark] Frame " << launchParams.frame.frameID
+                    << " - Average render time (last 10 frames): "
+                    << (totalFrameTime / frameCount) << " ms/frame" << std::endl;
+            // 重置计数器（可选，决定是否累计统计 or 每10帧重置一次）
+        }
     }
 
     void SampleRenderer::setCamera(const Camera &camera) {
         lastSetCamera = camera;
-        std::cout << camera.from << " " << camera.at << " " << camera.up << "\n";
+        //std::cout << camera.from << " " << camera.at << " " << camera.up << "\n";
 
         // 设置默认分辨率为 1920x1080
         if (launchParams.frame.size.x == 0 || launchParams.frame.size.y == 0) {
