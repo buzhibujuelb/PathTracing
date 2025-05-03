@@ -35,7 +35,18 @@ namespace osc {
         TriangleMeshSBTData data;
     };
 
+    void printCurrentGPUMemoryUsage(const std::string &stage) {
+        size_t free_mem, total_mem;
+        cudaMemGetInfo(&free_mem, &total_mem);
+        std::cout << "[Memory Usage - " << stage << "] "
+                << "Used: " << (total_mem - free_mem) / (1024.0 * 1024.0) << " MB, "
+                << "Free: " << free_mem / (1024.0 * 1024.0) << " MB, "
+                << "Total: " << total_mem / (1024.0 * 1024.0) << " MB"
+                << std::endl;
+    }
+
     SampleRenderer::SampleRenderer(const Model *model): model(model) {
+        printCurrentGPUMemoryUsage("Initial (Before Any Resource Alloc)");
         initOptix();
 
         std::cout << "#osc: creating optix context ..." << std::endl;
@@ -54,6 +65,7 @@ namespace osc {
         createHitgroupPrograms();
 
         launchParams.traversable = buildAccel();
+        printCurrentGPUMemoryUsage("After BVH Accel Build");
 
         std::cout << "#osc: setting up optix pipeline ..." << std::endl;
         createPipeline();
@@ -429,6 +441,7 @@ namespace osc {
     }
 
     void SampleRenderer::createTextures() {
+        printCurrentGPUMemoryUsage("Before Render");
         int numTextures = (int) model->textures.size();
         launchParams.has_envmap = model->envmap != nullptr;
         if (launchParams.has_envmap) {
@@ -483,6 +496,7 @@ namespace osc {
             CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
             textureObjects[textureID] = cuda_tex;
         }
+        printCurrentGPUMemoryUsage("After Render");
     }
 
     OptixTraversableHandle SampleRenderer::buildAccel() {
@@ -677,4 +691,5 @@ namespace osc {
         for (int i = 0; i < 12; i++)
             index.push_back(firstVertexID + vec3i(indices[3 * i + 0], indices[3 * i + 1], indices[3 * i + 2]));
     }
+
 }
